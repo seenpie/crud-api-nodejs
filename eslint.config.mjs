@@ -24,7 +24,7 @@ export default [
       "@typescript-eslint": typescriptEslint,
       prettier
     },
-    ignores: ["dist/"],
+    ignores: ["dist/", "*.config.*"],
     languageOptions: {
       parser: tsParser,
       ecmaVersion: 5,
