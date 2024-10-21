@@ -1,12 +1,14 @@
 {
   "name": "crud-api-nodejs",
   "version": "1.0.0",
-  "type": "module",
   "description": "implement nodejs task from https://github.com/AlreadyBored/nodejs-assignments/blob/main/assignments/crud-api/assignment.md",
   "main": "src/index.ts",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
-    "start:dev": "tsx watch --env-file=.env src/index.ts",
-    "start:prod": "npm run build && node --env-file=.env dist/bundle.js",
+    "start:dev": "ts-node-dev --require tsconfig-paths/register src/index.ts",
+    "start:prod": "npm run build && node dist/bundle.js",
     "build": "webpack --config webpack.config.mjs",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
@@ -21,12 +23,15 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.9.0",
     "@typescript-eslint/parser": "^8.9.0",
+    "dotenv": "^16.4.5",
     "eslint": "^9.12.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
     "prettier": "^3.3.3",
     "ts-loader": "^9.5.1",
-    "tsx": "^4.19.1",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.6.3",
     "webpack": "^5.95.0",
     "webpack-cli": "^5.1.4"
