@@ -5,7 +5,7 @@ import { ResponseHandler } from "@/server/Classes/ResponseHandler";
 type port = string | undefined;
 
 export class Server {
-  private server: ServerType;
+  private readonly server: ServerType;
   private readonly requestHandler: RequestHandler;
   private readonly defaultPort = 3000;
   private readonly responseHandler: ResponseHandler;
@@ -19,6 +19,14 @@ export class Server {
   start(serverPort: port) {
     const port = this._createPort(serverPort);
     this._startServer(port);
+  }
+
+  stop() {
+    this.server.close();
+  }
+
+  getServerInstance() {
+    return this.server;
   }
 
   private _startServer(serverPort: number): void {
