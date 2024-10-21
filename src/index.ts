@@ -1,4 +1,7 @@
 import { Server } from "@/server/Classes/Server";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const server = new Server();
 
