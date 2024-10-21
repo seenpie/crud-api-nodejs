@@ -52,7 +52,7 @@ export class ResponseHandler {
     this._sendResponse(
       res,
       HttpStatusCode.NOT_FOUND,
-      payload.message as string
+      JSON.stringify(payload.message)
     );
   }
 
@@ -63,7 +63,7 @@ export class ResponseHandler {
     this._sendResponse(
       res,
       HttpStatusCode.INTERNAL_SERVER_ERROR,
-      payload.message as string
+      JSON.stringify(payload.message)
     );
   }
 
@@ -79,7 +79,7 @@ export class ResponseHandler {
     this._sendResponse(
       res,
       HttpStatusCode.BAD_REQUEST,
-      payload.message as string
+      JSON.stringify(payload.message)
     );
   }
 
