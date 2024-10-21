@@ -8,17 +8,9 @@ export default {
   mode: "production",
   target: "node",
   entry: "./src/index.ts",
-  experiments: {
-    outputModule: true
-  },
   output: {
     filename: "bundle.js",
-    path: path.resolve(__dirname, "dist"),
-    environment: {
-      module: true
-    },
-    libraryTarget: "module",
-    chunkFormat: "module"
+    path: path.resolve(__dirname, "dist")
   },
   resolve: {
     extensions: [".ts", ".js"],
