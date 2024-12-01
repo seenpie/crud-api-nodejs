@@ -1,8 +1,9 @@
 import { createServer, Server as ServerType } from "http";
 import { RequestHandler } from "@/server/Classes/RequestHandler";
 import { ResponseHandler } from "@/server/Classes/ResponseHandler";
+import { Storage } from "@/db/Classes/Storage";
 
-type port = string | undefined;
+export type Port = string | undefined;
 
 export class Server {
   private readonly server: ServerType;
@@ -10,13 +11,13 @@ export class Server {
   private readonly defaultPort = 3000;
   private readonly responseHandler: ResponseHandler;
 
-  constructor() {
+  constructor(private readonly dbService: Storage) {
     this.responseHandler = new ResponseHandler();
-    this.requestHandler = new RequestHandler(this.responseHandler);
+    this.requestHandler = new RequestHandler(this.responseHandler, dbService);
     this.server = this._createServer();
   }
 
-  start(serverPort: port) {
+  start(serverPort: Port) {
     const port = this._createPort(serverPort);
     this._startServer(port);
   }
@@ -37,7 +38,7 @@ export class Server {
     return createServer(this.requestHandler.handleRequest);
   }
 
-  private _createPort(serverPort: port): number {
+  private _createPort(serverPort: Port): number {
     const parsedPort = Number(serverPort);
 
     if (Number.isNaN(parsedPort) || 0 >= parsedPort || parsedPort >= 65536) {

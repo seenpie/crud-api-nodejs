@@ -5,9 +5,13 @@ import {
   ErrorMessages,
   HttpStatusCode
 } from "@/models/enums";
-import { storage } from "@/db";
-import { ClientData } from "@/models/types";
+import { ClientData, TResponsePayload, TUser } from "@/models/types";
 import { ResponseHandler } from "@/server/Classes/ResponseHandler";
+import { Storage } from "@/db/Classes/Storage";
+import cluster from "cluster";
+import { getDbInstance, setItemToMasterDb } from "@/db/helpers/get-db-instance";
+
+const { isWorker } = cluster;
 
 const userUrlPattern = /^\/api\/users\/([a-zA-Z0-9-]+)$/;
 
@@ -15,7 +19,10 @@ export class RequestHandler {
   private requestCount: number;
   private responseHandler: ResponseHandler;
 
-  constructor(responseHandler: ResponseHandler) {
+  constructor(
+    responseHandler: ResponseHandler,
+    private readonly dbService: Storage
+  ) {
     this.requestCount = 0;
     this.responseHandler = responseHandler;
   }
@@ -75,8 +82,14 @@ export class RequestHandler {
     });
   };
 
-  private _handleGetUsers(res: ServerResponse): void {
-    const userList = storage.getUserList();
+  private async _handleGetUsers(res: ServerResponse): Promise<void> {
+    let userList: TUser[];
+    if (isWorker) {
+      userList = await getDbInstance();
+    } else {
+      userList = this.dbService.getUserList();
+    }
+
     this.responseHandler.respond(res, {
       message: HttpStatusCode.OK,
       data: userList
@@ -125,7 +138,10 @@ export class RequestHandler {
     });
   }
 
-  private _handleCreateUser(req: IncomingMessage, res: ServerResponse): void {
+  private async _handleCreateUser(
+    req: IncomingMessage,
+    res: ServerResponse
+  ): Promise<void> {
     let body = "";
 
     req.on("data", (chunk) => {
@@ -139,10 +155,17 @@ export class RequestHandler {
       });
     });
 
-    req.on("end", () => {
+    req.on("end", async () => {
       try {
         const parsedBody = JSON.parse(body) as ClientData;
-        const createdUserOp = storage.createUser(parsedBody);
+
+        let createdUserOp: TResponsePayload;
+        if (isWorker) {
+          createdUserOp = await setItemToMasterDb(parsedBody);
+        } else {
+          createdUserOp = this.dbService.createUser(parsedBody);
+        }
+
         this.responseHandler.respond(res, createdUserOp);
       } catch (error) {
         const message =
@@ -157,7 +180,7 @@ export class RequestHandler {
   }
 
   private _handleDeleteUser(res: ServerResponse, userId: string): void {
-    const deleteUserOp = storage.deleteUser(userId);
+    const deleteUserOp = this.dbService.deleteUser(userId);
     this.responseHandler.respond(res, deleteUserOp);
   }
 
@@ -182,7 +205,7 @@ export class RequestHandler {
     req.on("end", () => {
       try {
         const parsedBody = JSON.parse(body) as ClientData;
-        const updatedUserOp = storage.updateUser(userId, parsedBody);
+        const updatedUserOp = this.dbService.updateUser(userId, parsedBody);
 
         this.responseHandler.respond(res, updatedUserOp);
       } catch (error) {
@@ -198,7 +221,7 @@ export class RequestHandler {
   }
 
   private _handleGetUser(res: ServerResponse, userId: string): void {
-    const getUserOp = storage.getUserById(userId);
+    const getUserOp = this.dbService.getUserById(userId);
     this.responseHandler.respond(res, getUserOp);
   }
 }
