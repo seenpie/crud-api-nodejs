@@ -42,6 +42,12 @@ PORT=3000
 npm run start:dev
 ```
 
+#### multi mode
+
+```
+npm run start:multi
+```
+
 #### prod mode
 
 ```
