@@ -2,6 +2,9 @@ import { Server } from "@/server/Classes/Server";
 import request from "supertest";
 import dotenv from "dotenv";
 import { HttpStatusCode } from "@/models/enums";
+import { TUser } from "@/models/types";
+import { DatabaseService } from "@/db/database.service";
+import { createDefaultServer } from "@/helpers/server.helper";
 
 dotenv.config();
 
@@ -9,7 +12,9 @@ let server: Server;
 const clientUserPayload = { username: "123", age: 123, hobbies: ["sleeping"] };
 
 beforeAll(() => {
-  server = new Server();
+  const store: TUser[] = [];
+  const dbService = new DatabaseService(store);
+  server = createDefaultServer(dbService);
   server.start(process.env.PORT);
 });
 
