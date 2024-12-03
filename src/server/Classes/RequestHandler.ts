@@ -7,9 +7,15 @@ import {
 } from "@/models/enums";
 import { ClientData, TResponsePayload, TUser } from "@/models/types";
 import { ResponseHandler } from "@/server/Classes/ResponseHandler";
-import { Storage } from "@/db/Classes/Storage";
+import { DatabaseService } from "@/db/database.service";
 import cluster from "cluster";
-import { getDbInstance, setItemToMasterDb } from "@/db/helpers/get-db-instance";
+import {
+  deleteItemById,
+  getDbInstance,
+  getItemById,
+  setItemToMasterDb,
+  updateItemById
+} from "@/helpers/worker.helper";
 
 const { isWorker } = cluster;
 
@@ -21,13 +27,16 @@ export class RequestHandler {
 
   constructor(
     responseHandler: ResponseHandler,
-    private readonly dbService: Storage
+    private readonly dbService: DatabaseService
   ) {
     this.requestCount = 0;
     this.responseHandler = responseHandler;
   }
 
-  handleRequest = (req: IncomingMessage, res: ServerResponse): void => {
+  handleRequest = async (
+    req: IncomingMessage,
+    res: ServerResponse
+  ): Promise<void> => {
     const { url } = req;
 
     this._incRequestCount();
@@ -37,13 +46,13 @@ export class RequestHandler {
 
       if (match) {
         const userId = match[1];
-        this._handleUserIdURLRequest(req, res, userId);
+        await this._handleUserIdURLRequest(req, res, userId);
         return;
       }
     }
 
     if (url === AvailableRequestURL.USERS) {
-      this._handleUsersURLRequest(req, res);
+      await this._handleUsersURLRequest(req, res);
       return;
     }
 
@@ -60,19 +69,19 @@ export class RequestHandler {
     return ++this.requestCount;
   }
 
-  private _handleUsersURLRequest = (
+  private _handleUsersURLRequest = async (
     req: IncomingMessage,
     res: ServerResponse
-  ): void => {
+  ): Promise<void> => {
     const { method } = req;
 
     if (method === AvailableRequestMethods.GET) {
-      this._handleGetUsers(res);
+      await this._handleGetUsers(res);
       return;
     }
 
     if (method === AvailableRequestMethods.POST) {
-      this._handleCreateUser(req, res);
+      await this._handleCreateUser(req, res);
       return;
     }
 
@@ -103,15 +112,15 @@ export class RequestHandler {
     });
   }
 
-  private _handleUserIdURLRequest(
+  private async _handleUserIdURLRequest(
     req: IncomingMessage,
     res: ServerResponse,
     userId: string
-  ): void {
+  ): Promise<void> {
     const { method } = req;
 
     if (method === AvailableRequestMethods.GET) {
-      this._handleGetUser(res, userId);
+      await this._handleGetUser(res, userId);
       return;
     }
 
@@ -121,7 +130,7 @@ export class RequestHandler {
     }
 
     if (method === AvailableRequestMethods.DELETE) {
-      this._handleDeleteUser(res, userId);
+      await this._handleDeleteUser(res, userId);
       return;
     }
 
@@ -179,8 +188,16 @@ export class RequestHandler {
     });
   }
 
-  private _handleDeleteUser(res: ServerResponse, userId: string): void {
-    const deleteUserOp = this.dbService.deleteUser(userId);
+  private async _handleDeleteUser(
+    res: ServerResponse,
+    userId: string
+  ): Promise<void> {
+    let deleteUserOp: TResponsePayload;
+    if (isWorker) {
+      deleteUserOp = await deleteItemById(userId);
+    } else {
+      deleteUserOp = this.dbService.deleteUser(userId);
+    }
     this.responseHandler.respond(res, deleteUserOp);
   }
 
@@ -202,10 +219,15 @@ export class RequestHandler {
       });
     });
 
-    req.on("end", () => {
+    req.on("end", async () => {
       try {
         const parsedBody = JSON.parse(body) as ClientData;
-        const updatedUserOp = this.dbService.updateUser(userId, parsedBody);
+        let updatedUserOp: TResponsePayload;
+        if (isWorker) {
+          updatedUserOp = await updateItemById(userId, parsedBody);
+        } else {
+          updatedUserOp = this.dbService.updateUser(userId, parsedBody);
+        }
 
         this.responseHandler.respond(res, updatedUserOp);
       } catch (error) {
@@ -220,8 +242,16 @@ export class RequestHandler {
     });
   }
 
-  private _handleGetUser(res: ServerResponse, userId: string): void {
-    const getUserOp = this.dbService.getUserById(userId);
+  private async _handleGetUser(
+    res: ServerResponse,
+    userId: string
+  ): Promise<void> {
+    let getUserOp: TResponsePayload;
+    if (isWorker) {
+      getUserOp = await getItemById(userId);
+    } else {
+      getUserOp = this.dbService.getUserById(userId);
+    }
     this.responseHandler.respond(res, getUserOp);
   }
 }
