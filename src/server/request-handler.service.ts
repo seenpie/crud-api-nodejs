@@ -6,7 +6,7 @@ import {
   HttpStatusCode
 } from "@/models/enums";
 import { ClientData, TResponsePayload, TUser } from "@/models/types";
-import { ResponseHandler } from "@/server/Classes/ResponseHandler";
+import { ResponseHandlerService } from "@/server/response-handler.service";
 import { DatabaseService } from "@/db/database.service";
 import cluster from "cluster";
 import {
@@ -21,12 +21,12 @@ const { isWorker } = cluster;
 
 const userUrlPattern = /^\/api\/users\/([a-zA-Z0-9-]+)$/;
 
-export class RequestHandler {
+export class RequestHandlerService {
   private requestCount: number;
-  private responseHandler: ResponseHandler;
+  private responseHandler: ResponseHandlerService;
 
   constructor(
-    responseHandler: ResponseHandler,
+    responseHandler: ResponseHandlerService,
     private readonly dbService: DatabaseService
   ) {
     this.requestCount = 0;

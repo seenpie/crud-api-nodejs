@@ -1,7 +1,7 @@
 import { ClientData } from "@/models/types";
 import { validate as validateUuid } from "uuid";
 
-export class UserDataValidator {
+export class UserDataValidatorService {
   private _validateUsernameField(data: ClientData) {
     if (!data["username"] || data.username.trim() === "") {
       return false;

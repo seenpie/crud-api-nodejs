@@ -1,19 +1,22 @@
 import { createServer, Server as ServerInstance } from "http";
-import { RequestHandler } from "@/server/Classes/RequestHandler";
-import { ResponseHandler } from "@/server/Classes/ResponseHandler";
+import { RequestHandlerService } from "@/server/request-handler.service";
+import { ResponseHandlerService } from "@/server/response-handler.service";
 import { DatabaseService } from "@/db/database.service";
 
 export type Port = string | undefined;
 
-export class Server {
+export class DefaultServerService {
   private readonly server: ServerInstance;
-  private readonly requestHandler: RequestHandler;
+  private readonly requestHandler: RequestHandlerService;
   private readonly defaultPort = 3000;
-  private readonly responseHandler: ResponseHandler;
+  private readonly responseHandler: ResponseHandlerService;
 
   constructor(private readonly dbService: DatabaseService) {
-    this.responseHandler = new ResponseHandler();
-    this.requestHandler = new RequestHandler(this.responseHandler, dbService);
+    this.responseHandler = new ResponseHandlerService();
+    this.requestHandler = new RequestHandlerService(
+      this.responseHandler,
+      dbService
+    );
     this.server = this._createServer();
   }
 

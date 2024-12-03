@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 
-export class User {
+export class UserEntity {
   readonly id: string;
   readonly username: string;
   readonly age: number;

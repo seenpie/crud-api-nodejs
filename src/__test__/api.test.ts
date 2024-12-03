@@ -1,4 +1,4 @@
-import { Server } from "@/server/Classes/Server";
+import { DefaultServerService } from "@/server/default-server.service";
 import request from "supertest";
 import dotenv from "dotenv";
 import { HttpStatusCode } from "@/models/enums";
@@ -8,7 +8,7 @@ import { createDefaultServer } from "@/helpers/server.helper";
 
 dotenv.config();
 
-let server: Server;
+let server: DefaultServerService;
 const clientUserPayload = { username: "123", age: 123, hobbies: ["sleeping"] };
 
 beforeAll(() => {
@@ -22,7 +22,7 @@ afterAll(() => {
   server.stop();
 });
 
-describe("User API testing", () => {
+describe("UserEntity API testing", () => {
   let createdUserId: string;
 
   test("GET /api/users - should return an empty array", async () => {

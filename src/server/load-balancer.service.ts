@@ -50,7 +50,7 @@ export class LoadBalancerService {
     proxyRequest.on("error", (err) => {
       console.error("Proxy error:", err);
       res.writeHead(500);
-      res.end("Internal Server Error");
+      res.end("Internal DefaultServerService Error");
     });
   };
 }

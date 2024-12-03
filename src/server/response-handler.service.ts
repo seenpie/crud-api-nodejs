@@ -13,7 +13,7 @@ type TErrorMessageMap = {
   [key in ErrorMessages]: HttpStatusCode;
 };
 
-export class ResponseHandler {
+export class ResponseHandlerService {
   private readonly _statusCodeHandlers: TStatusCodeHandlers = {
     [HttpStatusCode.OK]: this._handleOK.bind(this),
     [HttpStatusCode.CREATED]: this._handleCreate.bind(this),

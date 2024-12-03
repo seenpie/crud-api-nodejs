@@ -1,15 +1,15 @@
 import { ClientData, TResponsePayload, TUser } from "@/models/types";
-import { User } from "@/db/Classes/User";
-import { UserDataValidator } from "@/db/Classes/UserDataValidator";
+import { UserEntity } from "@/user/user.entity";
+import { UserDataValidatorService } from "@/user/user-data-validator.service";
 import { ErrorMessages, HttpStatusCode } from "@/models/enums";
 
 export class DatabaseService {
   private store: TUser[];
-  private readonly validator: UserDataValidator;
+  private readonly validator: UserDataValidatorService;
 
   constructor(store: TUser[]) {
     this.store = store;
-    this.validator = new UserDataValidator();
+    this.validator = new UserDataValidatorService();
   }
 
   private _return(
@@ -28,7 +28,7 @@ export class DatabaseService {
     if (!isDataValid) return this._return(ErrorMessages.DATA_IS_INVALID);
 
     const { username, age, hobbies } = userData;
-    const newUser = new User(username, age, hobbies as string[] | []);
+    const newUser = new UserEntity(username, age, hobbies as string[] | []);
     this.store.push(newUser);
     return this._return(HttpStatusCode.CREATED, newUser);
   }
