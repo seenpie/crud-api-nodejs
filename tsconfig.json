@@ -10,7 +10,7 @@
     "allowImportingTsExtensions": false,
     "skipLibCheck": true,
     "noUnusedParameters": true,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "outDir": "./dist",
     "rootDir": "./src",
     "allowJs": true,
