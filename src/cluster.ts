@@ -1,32 +1,31 @@
 import os from "os";
-import cluster from "cluster";
+import cluster, { Worker } from "cluster";
 import dotenv from "dotenv";
-import { Port, Server } from "./server/Classes/Server";
-import { Storage } from "./db/Classes/Storage";
-import { TUser } from "./models/types";
+import { DatabaseService } from "./db/database.service";
+import { Message, TUser } from "./models/types";
+import { MessageCommands } from "@/models/enums";
+import {
+  createDefaultServer,
+  createLoadBalancerServer
+} from "@/helpers/server.helper";
 
 dotenv.config();
 
 const PORT = process.env.PORT || "3000";
 const store: TUser[] = [];
-const dbService = new Storage(store);
+const dbService = new DatabaseService(store);
 
 async function startCluster() {
   if (cluster.isPrimary) {
     console.log(`is primary, primary pid: ${process.pid}`);
-    spawnWorkers();
+    const workerPorts = spawnWorkers();
 
-    startServer(PORT, dbService);
+    const loadBalancer = createLoadBalancerServer(workerPorts);
+    loadBalancer.start(+PORT);
   } else {
-    // worker?.send(`i'm ready ${worker?.id}, sending message to parent`);
-    // console.log("is worker", process.env.PORT);
-    startServer(PORT, dbService);
+    const server = createDefaultServer(dbService);
+    server.start(PORT);
   }
-}
-
-async function startServer(port: Port, dbService: Storage) {
-  const server = new Server(dbService);
-  server.start(port);
 }
 
 function createWorker(id: number) {
@@ -34,21 +33,32 @@ function createWorker(id: number) {
   cluster.schedulingPolicy = cluster.SCHED_RR;
   const worker = cluster.fork({ PORT: WORKER_PORT });
   worker.on("message", () => {});
-  return worker;
+  return { worker, WORKER_PORT };
 }
 
-function handleWorkerMessage(message, worker) {
+function handleWorkerMessage(message: Message, worker: Worker) {
   console.log(
     `in master process ${process.pid} got message from worker ${worker.id}, message: ${JSON.stringify(message)}`
   );
 
-  if (!("type" in message)) return;
-
   const { type, data } = message;
 
   switch (type) {
-    case "set":
-      worker.send({ data: dbService.createUser(data) });
+    case MessageCommands.CREATE:
+      if (!data || !data.userData) throw new Error("500");
+      worker.send({ data: dbService.createUser(data.userData) });
+      break;
+    case MessageCommands.GET_UNIQUE:
+      if (!data || !data.id) throw new Error("500");
+      worker.send({ data: dbService.getUserById(data.id) });
+      break;
+    case MessageCommands.DELETE:
+      if (!data || !data.id) throw new Error("500");
+      worker.send({ data: dbService.deleteUser(data.id) });
+      break;
+    case MessageCommands.UPDATE:
+      if (!data || !data.id || !data.userData) throw new Error("500");
+      worker.send({ data: dbService.updateUser(data.id, data.userData) });
       break;
     default:
       worker.send({ data: store });
@@ -57,33 +67,27 @@ function handleWorkerMessage(message, worker) {
 
 function spawnWorkers() {
   const availableParallelism = os.availableParallelism();
-  const workers = [...Array(availableParallelism).keys()].map((i) =>
-    createWorker(i)
-  );
+  const workerPorts: number[] = [];
+  const workers = [...Array(availableParallelism).keys()].map((i) => {
+    const { worker, WORKER_PORT } = createWorker(i);
+    workerPorts.push(WORKER_PORT);
+    return worker;
+  });
 
   workers.forEach((worker) => {
     worker.on("message", (msg) => {
       if ("type" in msg) {
         handleWorkerMessage(msg, worker);
       }
-      // console.log(`worker ${worker.id} got a message ${msg}`);
     });
   });
-
-  // cluster.on("fork", (worker) => console.log(`worker ${worker.id} is online`));
-
-  // cluster.on("listening", (worker, address) => {
-  //   console.log(`worker ${worker.id} connected to ${JSON.stringify(address)}`);
-  // });
-
-  // cluster.on("disconnect", (worker) => {
-  //   console.log(`worker ${worker.id} has disconnected`);
-  // });
 
   cluster.on("exit", (worker) => {
     console.log("worker has been killed", worker.process.pid);
     cluster.fork();
   });
+
+  return workerPorts;
 }
 
 startCluster();
