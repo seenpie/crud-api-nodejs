@@ -3,7 +3,7 @@ import { User } from "@/db/Classes/User";
 import { UserDataValidator } from "@/db/Classes/UserDataValidator";
 import { ErrorMessages, HttpStatusCode } from "@/models/enums";
 
-export class Storage {
+export class DatabaseService {
   private store: TUser[];
   private readonly validator: UserDataValidator;
 
@@ -29,8 +29,8 @@ export class Storage {
 
     const { username, age, hobbies } = userData;
     const newUser = new User(username, age, hobbies as string[] | []);
-    this.store.push(newUser.getUser());
-    return this._return(HttpStatusCode.CREATED, newUser.getUser());
+    this.store.push(newUser);
+    return this._return(HttpStatusCode.CREATED, newUser);
   }
 
   deleteUser(id: string): TResponsePayload {
